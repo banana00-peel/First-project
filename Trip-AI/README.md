@@ -101,5 +101,5 @@ docker compose up -d --build
 
 ## 安全说明
 
-- `.env` 文件含真实密钥，已加入 `.gitignore`，请勿提交。
+- `.env` 文件修改为自己的真实密钥。
 - 生产环境务必修改 `JWT_SECRET`，并建议轮换 DeepSeek / 高德 API key。
