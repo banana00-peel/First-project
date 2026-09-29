@@ -89,6 +89,19 @@ docker compose up -d --build
 - 后端：http://localhost:8000
 - 数据库：PostgreSQL（数据持久化于 `pgdata` 卷）
 
+## 数据库迁移
+
+Schema 变更由 Alembic 管理，迁移脚本位于 `backend/alembic/`，数据库 URL 由 `backend/alembic/env.py` 从 `app/config.py` 读取（可用环境变量 `DATABASE_URL` 覆盖）。
+
+- 后端启动时会自动执行迁移到最新版本（`alembic upgrade head`）。
+- 常用命令（在 `backend/` 目录下执行）：
+  ```bash
+  alembic upgrade head                        # 升级到最新版本
+  alembic revision --autogenerate -m "描述"   # 修改模型后生成新迁移
+  alembic check                               # 检查模型与迁移是否一致（应无差异）
+  ```
+- 从旧版（`create_all` 建表、无 `alembic_version` 表）升级：执行一次 `alembic stamp head` 标记当前 schema 为已迁移即可，无需重建数据库。
+
 ## 核心流程
 
 1. 用户在首页填写目的地、日期、偏好。

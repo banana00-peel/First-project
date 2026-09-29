@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from app.config import get_settings
+from app.config import BASE_DIR, get_settings
 
 settings = get_settings()
 
@@ -25,8 +25,16 @@ def get_db():
 
 
 def init_db():
-    """启动时建表（MVP 用 create_all；后续引入 Alembic 迁移）"""
-    # noqa: F401 —— 导入模型以注册到 Base.metadata
-    from app.models import user, trip, share  # noqa: F401
+    """启动时执行数据库迁移（Alembic 升级到 head）。
 
-    Base.metadata.create_all(bind=engine)
+    迁移脚本位于 backend/alembic，数据库 URL 由 alembic/env.py 从 app.config 读取。
+    """
+    from alembic import command
+    from alembic.config import Config
+
+    # noqa: F401 —— 导入模型以注册到 Base.metadata（Alembic autogenerate 依赖）
+    from app.models import share, trip, user  # noqa: F401
+
+    cfg = Config(str(BASE_DIR / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
+    command.upgrade(cfg, "head")
