@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # 数据库（默认 SQLite 便于本地开发；生产用 PostgreSQL）
     database_url: str = "sqlite:///./trip.db"
 
+    # Redis（Celery 任务队列 broker）
+    redis_url: str = "redis://localhost:6379/0"
+
     # LLM 配置（OpenAI 兼容协议，默认 DeepSeek）
     llm_model: str = "deepseek-chat"
     llm_api_key: str = ""
@@ -43,6 +46,15 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
+
+    # 日志与可观测性
+    log_level: str = "INFO"
+
+    # Langfuse 链路追踪（默认关闭；开启时指向 Langfuse 云或自托管实例）
+    langfuse_enabled: bool = False
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     class Config:
         env_file = ".env"

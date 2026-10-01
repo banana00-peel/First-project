@@ -68,7 +68,7 @@ onMounted(async () => {
   try {
     data.value = await getSharedTrip(token)
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || '分享链接无效或已过期'
+    error.value = e?.response?.data?.message || e?.response?.data?.detail || '分享链接无效或已过期'
   } finally {
     loading.value = false
   }

@@ -8,6 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from app.agents.nodes import enrich, gather, plan
 from app.agents.state import PlannerState
 from app.config import get_settings
+from app.core.tracing import get_langfuse_handler
 
 _llm = None
 _app = None
@@ -74,13 +75,25 @@ def _is_connection_error(e: Exception) -> bool:
     )
 
 
-async def run_planner(state: Dict[str, Any]) -> Dict[str, Any]:
-    """执行旅行规划，返回最终状态；MCP 子进程异常时重建会话并重试一次"""
+async def run_planner(
+    state: Dict[str, Any], *, trace_metadata: Dict[str, Any] | None = None
+) -> Dict[str, Any]:
+    """执行旅行规划，返回最终状态；MCP 子进程异常时重建会话并重试一次。
+
+    trace_metadata 可选：接入 Langfuse 时传入（如 {"task_id": ...}），callbacks 经 graph config
+    下传到各节点与 LLM 调用。
+    """
     from loguru import logger
+
+    handler = get_langfuse_handler(trace_metadata)
+    config: Dict[str, Any] = {}
+    if handler is not None:
+        config["callbacks"] = [handler]
+        config["metadata"] = trace_metadata or {}
 
     try:
         graph = await get_graph()
-        return await graph.ainvoke(state)
+        return await graph.ainvoke(state, config=config or None)
     except Exception as e:
         if _is_connection_error(e):
             logger.warning("检测到 MCP 子进程异常，重建会话后重试: {}", e)
@@ -88,5 +101,11 @@ async def run_planner(state: Dict[str, Any]) -> Dict[str, Any]:
             await reset_amap_mcp()
             await reset_graph()# 清理旧的图
             graph = await get_graph()# 新建图
-            return await graph.ainvoke(state)
+            return await graph.ainvoke(state, config=config or None)
         raise
+    finally:
+        if handler is not None:
+            try:
+                handler.flush()
+            except Exception:  # noqa: BLE001 —— 追踪失败不影响主流程
+                logger.warning("Langfuse flush 失败，忽略")

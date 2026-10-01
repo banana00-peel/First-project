@@ -16,6 +16,10 @@ psycopg2-binary>=2.9.9
 # 数据库迁移
 alembic>=1.13.0
 
+# 异步任务队列（Celery + Redis）
+celery>=5.3.0
+redis>=5.0.0
+
 # 鉴权
 PyJWT>=2.8.0
 bcrypt>=4.1.0
@@ -34,3 +38,6 @@ mcp>=1.0.0
 
 # 日志
 loguru>=0.7.0
+
+# 可观测性（Langfuse 链路追踪，默认关闭）
+langfuse>=2.50.0

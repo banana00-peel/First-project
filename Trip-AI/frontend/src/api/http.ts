@@ -18,7 +18,7 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status
-    const detail = error.response?.data?.detail
+    const detail = error.response?.data?.message ?? error.response?.data?.detail
     if (status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')

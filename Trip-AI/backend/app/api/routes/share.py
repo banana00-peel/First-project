@@ -2,15 +2,16 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.core.errors import BizError, ErrorCode
 from app.models.share import ShareLink
 from app.models.trip import Trip
 from app.models.user import User
-from app.schemas.share import ShareCreateRequest, ShareLinkOut
+from app.schemas.share import ShareCreateRequest, ShareLinkOut, ShareViewResponse
 
 router = APIRouter(prefix="/share", tags=["分享"])
 
@@ -30,7 +31,7 @@ def create_share(
 ):
     trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="行程不存在")
+        raise BizError(ErrorCode.TRIP_NOT_FOUND)
 
     token = secrets.token_urlsafe(32)
     expires_at = None
@@ -49,27 +50,27 @@ def create_share(
 def list_links(trip_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="行程不存在")
+        raise BizError(ErrorCode.TRIP_NOT_FOUND)
     links = db.query(ShareLink).filter(ShareLink.trip_id == trip_id).all()
     return [ShareLinkOut(token=l.token, url=_build_url(request, l.token), expires_at=l.expires_at) for l in links]
 
 
-@router.get("/{token}", summary="通过 token 查看分享的行程（无需登录）")
+@router.get("/{token}", response_model=ShareViewResponse, summary="通过 token 查看分享的行程（无需登录）")
 def view_share(token: str, db: Session = Depends(get_db)):
     link = db.query(ShareLink).filter(ShareLink.token == token).first()
     if not link:
-        raise HTTPException(status_code=404, detail="分享链接不存在")
+        raise BizError(ErrorCode.SHARE_NOT_FOUND)
 
     # SQLite 不保存时区信息，读回的 datetime 为 naive，需补齐 UTC 时区后再比较
     expires_at = link.expires_at
     if expires_at and expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at and expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=410, detail="分享链接已过期")
+        raise BizError(ErrorCode.SHARE_EXPIRED)
 
     trip = db.get(Trip, link.trip_id)
     if not trip:
-        raise HTTPException(status_code=404, detail="行程不存在")
+        raise BizError(ErrorCode.TRIP_NOT_FOUND)
 
     return {
         "city": trip.city,

@@ -1,9 +1,10 @@
 """FastAPI 依赖：获取当前用户"""
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.errors import BizError, ErrorCode
 from app.core.security import decode_token
 from app.models.user import User
 
@@ -15,14 +16,14 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> User:
     if credentials is None:
-        raise HTTPException(status_code=401, detail="未登录")
+        raise BizError(ErrorCode.UNAUTHORIZED)
     try:
         payload = decode_token(credentials.credentials)
         user_id = int(payload.get("sub"))
     except Exception:
-        raise HTTPException(status_code=401, detail="登录凭证无效或已过期")
+        raise BizError(ErrorCode.TOKEN_INVALID)
 
     user = db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=401, detail="用户不存在")
+        raise BizError(ErrorCode.USER_NOT_FOUND)
     return user

@@ -142,3 +142,16 @@ class PlanResponse(BaseModel):
     success: bool
     message: str = ""
     data: Optional[TripPlan] = None
+
+
+# ---------- 异步生成任务 ----------
+class TaskAcceptedResponse(BaseModel):
+    task_id: str
+    status: str
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    plan: Optional[TripPlan] = None
+    error: Optional[str] = None

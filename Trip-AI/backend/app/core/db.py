@@ -8,7 +8,8 @@ settings = get_settings()
 
 _connect_args = {}
 if settings.database_url.startswith("sqlite"):
-    _connect_args = {"check_same_thread": False}
+    # check_same_thread：FastAPI 多线程访问 SQLite；timeout：web + worker 多进程并发写时等待锁
+    _connect_args = {"check_same_thread": False, "timeout": 30}
 
 engine = create_engine(settings.database_url, pool_pre_ping=True, connect_args=_connect_args)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -33,7 +34,7 @@ def init_db():
     from alembic.config import Config
 
     # noqa: F401 —— 导入模型以注册到 Base.metadata（Alembic autogenerate 依赖）
-    from app.models import share, trip, user  # noqa: F401
+    from app.models import generation_task, share, trip, user  # noqa: F401
 
     cfg = Config(str(BASE_DIR / "alembic.ini"))
     cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))

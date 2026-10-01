@@ -13,13 +13,24 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg2://trip:trip_password@db:5432/trip
+      REDIS_URL: redis://redis:6379/0
       LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com}
@@ -29,6 +40,24 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
     ports:
       - "8000:8000"
+
+  worker:
+    build: ./backend
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://trip:trip_password@db:5432/trip
+      REDIS_URL: redis://redis:6379/0
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com}
+      AMAP_API_KEY: ${AMAP_API_KEY}
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
+      JWT_SECRET: ${JWT_SECRET}
 
   frontend:
     build: ./frontend

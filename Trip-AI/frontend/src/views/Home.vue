@@ -143,9 +143,9 @@ import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
-import { generateTrip } from '@/api/trips'
+import { generateTrip, getGenerateTask } from '@/api/trips'
 import { useAuthStore } from '@/stores/auth'
-import type { TripFormData } from '@/types'
+import type { TripFormData, TripPlan } from '@/types'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -205,20 +205,34 @@ async function handleSubmit() {
       preferences: formData.preferences,
       free_text: formData.free_text,
     }
-    const res = await generateTrip(requestData)
-    if (res.success && res.data) {
-      sessionStorage.setItem('tripPlan', JSON.stringify(res.data))
-      sessionStorage.setItem('tripRequest', JSON.stringify(requestData))
-      message.success('旅行计划生成成功！')
-      router.push('/result')
-    } else {
-      message.error(res.message || '生成失败')
+    const { task_id } = await generateTrip(requestData)
+    const plan = await pollTask(task_id)
+    sessionStorage.setItem('tripPlan', JSON.stringify(plan))
+    sessionStorage.setItem('tripRequest', JSON.stringify(requestData))
+    message.success('旅行计划生成成功！')
+    router.push('/result')
+  } catch (e) {
+    // 轮询抛出的业务错误用 message 提示；axios 错误已由拦截器统一提示
+    if (e instanceof Error && !(e as { isAxiosError?: boolean }).isAxiosError) {
+      message.error(e.message || '生成失败')
     }
-  } catch {
-    // 错误已由拦截器提示
   } finally {
     loading.value = false
   }
+}
+
+async function pollTask(taskId: string, maxAttempts = 120): Promise<TripPlan> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const res = await getGenerateTask(taskId)
+    if (res.status === 'completed' && res.plan) {
+      return res.plan
+    }
+    if (res.status === 'failed') {
+      throw new Error(res.error || '旅行计划生成失败')
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+  }
+  throw new Error('生成超时，请稍后重试')
 }
 </script>
 

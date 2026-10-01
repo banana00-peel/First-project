@@ -95,6 +95,19 @@ export interface PlanResponse {
   data?: TripPlan
 }
 
+// ---------- 异步生成任务 ----------
+export interface TaskAcceptedResponse {
+  task_id: string
+  status: string
+}
+
+export interface TaskStatusResponse {
+  task_id: string
+  status: string
+  plan?: TripPlan
+  error?: string
+}
+
 // ---------- 行程列表 / 详情 ----------
 export interface TripSummary {
   id: number

@@ -1,8 +1,13 @@
 import http from './http'
-import type { PlanResponse, TripDetail, TripFormData, TripPlan, TripSummary } from '@/types'
+import type { TaskAcceptedResponse, TaskStatusResponse, TripDetail, TripFormData, TripPlan, TripSummary } from '@/types'
 
-export async function generateTrip(data: TripFormData): Promise<PlanResponse> {
+export async function generateTrip(data: TripFormData): Promise<TaskAcceptedResponse> {
   const res = await http.post('/trips/generate', data)
+  return res.data
+}
+
+export async function getGenerateTask(taskId: string): Promise<TaskStatusResponse> {
+  const res = await http.get(`/trips/generate/${taskId}`)
   return res.data
 }
 
