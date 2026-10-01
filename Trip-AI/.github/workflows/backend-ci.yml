@@ -1,0 +1,29 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests with coverage
+        working-directory: backend
+        # 只跑测试并输出覆盖率报告，不设 --cov-fail-under 门槛
+        run: pytest -v --cov=app --cov-report=term-missing
