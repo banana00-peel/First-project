@@ -29,6 +29,9 @@ langchain-core>=0.3.0
 langchain-openai>=0.2.0
 langgraph>=0.2.0
 
+# 重试（LLM 调用指数退避重试）
+tenacity>=8.0.0
+
 # HTTP 客户端
 httpx>=0.27.0
 

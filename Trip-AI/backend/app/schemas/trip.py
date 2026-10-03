@@ -11,10 +11,17 @@ class TripRequest(BaseModel):
     start_date: str
     end_date: str
     travel_days: int = Field(ge=1, le=30)
-    transportation: str = "公共交通"
-    accommodation: str = "经济型酒店"
-    preferences: List[str] = Field(default_factory=list)
-    free_text: str = ""
+    transportation: str = Field("公共交通", max_length=32)
+    accommodation: str = Field("经济型酒店", max_length=32)
+    preferences: List[str] = Field(default_factory=list, max_length=20)
+    free_text: str = Field("", max_length=2000)
+
+    @field_validator("preferences")
+    @classmethod
+    def _validate_preference_items(cls, v: List[str]) -> List[str]:
+        if any(len(item) > 64 for item in v):
+            raise ValueError("单个偏好项不能超过 64 字符")
+        return v
 
 
 class TripSaveRequest(TripRequest):

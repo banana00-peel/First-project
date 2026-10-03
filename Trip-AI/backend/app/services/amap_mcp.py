@@ -14,6 +14,7 @@ text_search / search_detail / weather / direction_* 取真实数据，供下游�
 - 三个方向工具（步行/驾车/公交）返回 distance(米) + duration(秒) + steps，
   但不含 polyline 轨迹，前端用「景点直线连线」呈现路线。
 """
+import asyncio
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -45,6 +46,9 @@ DIRECTION_TOOLS = {
 # 取数数量上限（search_detail 每 POI 一次调用，控制总量与耗时）
 ATTRACTION_LIMIT = 12
 HOTEL_LIMIT = 8
+
+# 单次工具调用超时（秒）：防止 MCP 子进程卡死导致任务无限期挂起
+TOOL_TIMEOUT_SECONDS = 30.0
 
 
 def _get_amap_mcp_env() -> Dict[str, str]:
@@ -146,9 +150,22 @@ def parse_tool_result(result: Any) -> Dict[str, Any]:
     return _extract_json(text) or {}
 
 
-async def _call_tool(tool: BaseTool, args: Dict[str, Any]) -> Dict[str, Any]:
-    """调用单个 MCP 工具并解析返回 JSON"""
-    raw = await tool.ainvoke(args)
+async def _call_tool(
+    tool: BaseTool, args: Dict[str, Any], timeout: float = TOOL_TIMEOUT_SECONDS
+) -> Optional[Dict[str, Any]]:
+    """调用单个 MCP 工具并解析返回 JSON。
+
+    统一超时与异常收敛：成功返回解析后的 dict，超时/失败返回 None，永不抛异常，
+    由调用方按各自语义优雅降级（空结果 / None / (0,0)）。
+    """
+    try:
+        raw = await asyncio.wait_for(tool.ainvoke(args), timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.warning("工具调用超时（>{:.0f}s）: {}", timeout, tool.name)
+        return None
+    except Exception as e:
+        logger.warning("工具调用失败 {}: {} ({})", tool.name, args, e)
+        return None
     return parse_tool_result(raw)
 
 
@@ -242,7 +259,7 @@ async def gather_amap_data(city: str, tools: Dict[str, BaseTool]) -> Tuple[List[
         if text_search is None:
             return []
         res = await _call_tool(text_search, {"keywords": keywords, "city": city})
-        pois = res.get("pois", []) or []
+        pois = (res or {}).get("pois", []) or []
         out: List[Dict[str, Any]] = []
         for p in pois[:limit]:
             item = {
@@ -257,11 +274,7 @@ async def gather_amap_data(city: str, tools: Dict[str, BaseTool]) -> Tuple[List[
             }
             # 用 POI 详情补坐标与评分
             if detail_tool is not None and item["id"]:
-                try:
-                    d = await _call_tool(detail_tool, {"id": item["id"]})
-                except Exception as e:
-                    logger.warning("POI 详情获取失败 {}: {}", item["id"], e)
-                    d = {}
+                d = await _call_tool(detail_tool, {"id": item["id"]}) or {}
                 item["type"] = d.get("type", item["type"])
                 item["rating"] = d.get("rating", "")
                 item["image_url"] = item["image_url"] or _pick_photo(d.get("photos"))
@@ -274,7 +287,8 @@ async def gather_amap_data(city: str, tools: Dict[str, BaseTool]) -> Tuple[List[
 
     weather: List[Dict[str, Any]] = []
     if weather_tool is not None:
-        weather = _parse_weather(await _call_tool(weather_tool, {"city": city}))[:4]
+        data = await _call_tool(weather_tool, {"city": city})
+        weather = _parse_weather(data or {})[:4]
 
     logger.info(
         "高德 MCP 取数结果 → 景点 {} / 天气 {} / 酒店 {}",
@@ -393,10 +407,8 @@ async def get_route(
     if mode == "transit":
         args["city"] = city
         args["cityd"] = city
-    try:
-        data = await _call_tool(tool, args)
-    except Exception as e:
-        logger.warning("路线规划失败 {}->{}: {}", origin, destination, e)
+    data = await _call_tool(tool, args)
+    if data is None:
         return None
     return _parse_direction(data, mode)
 
@@ -406,11 +418,10 @@ async def geocode(address: str, city: str, tools: Dict[str, BaseTool]) -> Tuple[
     tool = tools.get(TOOL_GEO)
     if tool is None or not address:
         return 0.0, 0.0
-    try:
-        data = await _call_tool(tool, {"address": address, "city": city})
-        ret = data.get("return") or data.get("geocodes") or []
-        if ret and isinstance(ret[0], dict):
-            return _parse_location(ret[0].get("location"))
-    except Exception as e:
-        logger.warning("地理编码失败 {}: {}", address, e)
+    data = await _call_tool(tool, {"address": address, "city": city})
+    if data is None:
+        return 0.0, 0.0
+    ret = data.get("return") or data.get("geocodes") or []
+    if ret and isinstance(ret[0], dict):
+        return _parse_location(ret[0].get("location"))
     return 0.0, 0.0

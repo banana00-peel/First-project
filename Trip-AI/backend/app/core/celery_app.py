@@ -24,4 +24,6 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     broker_connection_retry_on_startup=True,
+    # 硬超时兜底：正常生成约 60–90s，此处 15 分钟上限确保意外死锁不会永久占住 worker
+    task_time_limit=900,
 )

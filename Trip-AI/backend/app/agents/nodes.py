@@ -4,7 +4,9 @@ import json
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+import openai
 from loguru import logger
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from app.agents.prompts import PLANNER_SYSTEM, build_planner_prompt
 from app.agents.state import PlannerState
@@ -33,6 +35,35 @@ def _schema_without_routes() -> str:
     return json.dumps(schema, ensure_ascii=False)
 
 
+# ---------- LLM 调用（带重试） ----------
+
+_RETRYABLE_LLM_ERRORS = (
+    openai.RateLimitError,       # 429 限流
+    openai.APITimeoutError,      # 超时
+    openai.APIConnectionError,   # 连接失败
+    openai.InternalServerError,  # 500
+)
+
+
+def _is_retryable_llm_error(e: Exception) -> bool:
+    """判断 LLM 异常是否值得重试（限流/超时/5xx）；业务性错误（如 4xx）不重试"""
+    if isinstance(e, _RETRYABLE_LLM_ERRORS):
+        return True
+    status = getattr(e, "status_code", None)
+    return isinstance(status, int) and (status == 429 or status >= 500)
+
+
+@retry(
+    retry=retry_if_exception(_is_retryable_llm_error),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    reraise=True,
+)
+async def _ainvoke_llm(llm, messages):
+    """带重试地调用 LLM：限流/超时/5xx 指数退避重试，最终失败原样抛出"""
+    return await llm.ainvoke(messages)
+
+
 async def plan(state: PlannerState, llm) -> Dict[str, Any]:
     """节点：综合数据，生成结构化计划。
 
@@ -58,8 +89,9 @@ async def plan(state: PlannerState, llm) -> Dict[str, Any]:
 
     logger.info("调用 LLM 生成结构化计划...")
     json_llm = llm.bind(response_format={"type": "json_object"}, max_tokens=8000)
-    resp = await json_llm.ainvoke(
-        [{"role": "system", "content": PLANNER_SYSTEM}, {"role": "user", "content": full_prompt}]
+    resp = await _ainvoke_llm(
+        json_llm,
+        [{"role": "system", "content": PLANNER_SYSTEM}, {"role": "user", "content": full_prompt}],
     )
 
     plan_dict = _parse_plan_json(resp.content)
