@@ -5,10 +5,16 @@
 - TestClient(app) 不加 with：跳过 lifespan，避免对真实库跑 init_db()（Alembic 迁移）。
 - 只 override get_db 一处：路由与 get_current_user 内部都 Depends(get_db)，一并生效。
 """
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+# 测试/CI 没有 .env，Settings() 的 jwt_secret 会退回占位符而触发校验报错；
+# 这里先注入一个仅测试用的强密钥（load_dotenv 用 setdefault，不会覆盖它）。
+os.environ.setdefault("JWT_SECRET", "test-secret-0123456789abcdef0123456789abcdef")
 
 from app.core.db import Base, get_db
 from app.main import app

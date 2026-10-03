@@ -3,10 +3,15 @@ from pathlib import Path
 from typing import List
 
 from dotenv import load_dotenv
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+# JWT 密钥校验：占位符集合 + 最小长度（HS256 建议 ≥ 32 字符）
+_JWT_SECRET_PLACEHOLDERS = {"change-me", "please-change-me", "changeme", "secret", "your-secret", ""}
+_JWT_SECRET_MIN_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -46,6 +51,16 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def _validate_jwt_secret(cls, v: str) -> str:
+        if v.strip().lower() in _JWT_SECRET_PLACEHOLDERS or len(v) < _JWT_SECRET_MIN_LENGTH:
+            raise ValueError(
+                f"JWT_SECRET 未设置或过弱：请设置至少 {_JWT_SECRET_MIN_LENGTH} 字符的随机密钥，"
+                f'可用 `python -c "import secrets; print(secrets.token_hex(32))"` 生成。'
+            )
+        return v
 
     # 日志与可观测性
     log_level: str = "INFO"
