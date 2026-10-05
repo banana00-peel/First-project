@@ -16,5 +16,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# 以非 root 用户运行：创建专用用户并切换，避免容器内进程以 root 身份运行
+RUN useradd --create-home --uid 10001 appuser
+# /app 只读无需写 .pyc；HOME 指向可写目录（worker 里 npx 拉 MCP 子进程需要可写缓存）
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    HOME=/home/appuser
+
+USER appuser
+
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -6,9 +6,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# 运行阶段
-FROM nginx:alpine
+# 运行阶段（非 root：用官方非 root nginx 镜像，监听 8080）
+FROM nginxinc/nginx-unprivileged:stable-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
