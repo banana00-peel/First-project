@@ -55,15 +55,19 @@ python run.py
 
 后端默认运行于 http://localhost:8000，交互式文档见 `/docs`。
 
+> 依赖说明：`requirements.txt` 是 `pip-compile` 生成的锁定文件（精确版本，构建可复现）。升级/新增依赖时，编辑 `requirements.in` 后运行 `pip-compile requirements.in` 重新生成。
+
 ### 2. 前端
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
 前端默认运行于 http://localhost:5173，`/api` 请求会代理到后端 8000 端口。
+
+> 依赖说明：`npm ci` 严格按 `package-lock.json` 安装（版本完全一致，可复现）。改 `package.json` 后运行 `npm install` 更新锁文件并提交。
 
 ### 3. 环境变量
 

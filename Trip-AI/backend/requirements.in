@@ -1,0 +1,51 @@
+# 直接依赖清单（人工维护）。改这里后运行：
+#   pip-compile requirements.in
+# 重新生成 requirements.txt（精确锁版本）。
+
+# Web 框架
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.9
+
+# 配置与校验
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+email-validator>=2.1.0
+python-dotenv>=1.0.0
+
+# 数据库
+sqlalchemy>=2.0.30
+psycopg2-binary>=2.9.9
+
+# 数据库迁移
+alembic>=1.13.0
+
+# 异步任务队列（Celery + Redis）
+celery>=5.3.0
+redis>=5.0.0
+
+# 鉴权
+PyJWT>=2.8.0
+bcrypt>=4.1.0
+
+# Agent 编排（LangChain / LangGraph）
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langgraph>=0.2.0
+
+# 重试（LLM 调用指数退避重试）
+tenacity>=8.0.0
+
+# HTTP 客户端
+httpx>=0.27.0
+
+# MCP 接入（高德地图 MCP）
+langchain-mcp-adapters>=0.1.0
+mcp>=1.0.0
+
+# 日志
+loguru>=0.7.0
+
+# 可观测性（Langfuse 链路追踪，默认关闭）
+# 注意：tracing.py 用的是 v2 的 CallbackHandler 构造参数，v3+ 已改签名，故封顶 <3.0
+langfuse>=2.50.0,<3.0

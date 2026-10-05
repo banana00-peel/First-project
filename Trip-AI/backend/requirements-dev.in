@@ -1,0 +1,10 @@
+# 开发/测试依赖清单（人工维护）。改这里后运行：
+#   pip-compile requirements-dev.in
+# 重新生成 requirements-dev.txt（精确锁版本）。
+
+pytest>=8.0.0
+pytest-cov>=5.0.0
+ruff>=0.6.0
+mypy>=1.11.0
+pre-commit>=3.8.0
+pip-tools>=7.4.0
