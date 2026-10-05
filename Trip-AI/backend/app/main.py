@@ -1,12 +1,16 @@
 """FastAPI 主应用"""
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+import redis
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.api.routes import auth, share, trips
 from app.config import get_settings
-from app.core.db import init_db
+from app.core.db import engine, get_db, init_db
 from app.core.errors import install_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import RequestContextMiddleware
@@ -20,6 +24,8 @@ async def lifespan(app: FastAPI):
     setup_logging()
     init_db()
     yield
+    # 优雅关停：释放数据库连接池，避免进程退出时遗留挂起连接
+    engine.dispose()
 
 
 app = FastAPI(
@@ -55,3 +61,41 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy", "service": settings.app_name, "version": settings.app_version}
+
+
+def _check_database(db: Session) -> None:
+    db.execute(text("SELECT 1"))
+
+
+def _check_redis() -> None:
+    client = redis.Redis.from_url(
+        settings.redis_url, socket_connect_timeout=2, socket_timeout=2
+    )
+    try:
+        client.ping()
+    finally:
+        client.connection_pool.disconnect()
+
+
+@app.get("/ready")
+def ready(db: Session = Depends(get_db)):
+    """就绪探针：DB 与 Redis 均可达返回 200，否则 503。
+
+    与 /health（纯存活）区分：依赖未就绪时返回 503，供编排层判定 healthy = ready。
+    """
+    checks: dict[str, str] = {}
+    try:
+        _check_database(db)
+        checks["database"] = "ok"
+    except Exception as e:  # noqa: BLE001 —— 就绪探测需捕获一切依赖异常
+        checks["database"] = str(e)
+    try:
+        _check_redis()
+        checks["redis"] = "ok"
+    except Exception as e:  # noqa: BLE001
+        checks["redis"] = str(e)
+    ok = all(v == "ok" for v in checks.values())
+    return JSONResponse(
+        status_code=200 if ok else 503,
+        content={"status": "ready" if ok else "not_ready", "checks": checks},
+    )
