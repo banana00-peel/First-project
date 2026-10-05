@@ -1,13 +1,13 @@
 """行程模型"""
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
 
 
-class Trip(Base):
+class Trip(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "trips"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

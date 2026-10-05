@@ -19,9 +19,9 @@ def get_current_user(
         raise BizError(ErrorCode.UNAUTHORIZED)
     try:
         payload = decode_token(credentials.credentials)
-        user_id = int(payload.get("sub"))
-    except Exception:
-        raise BizError(ErrorCode.TOKEN_INVALID)
+        user_id = int(payload["sub"])
+    except Exception:  # noqa: BLE001
+        raise BizError(ErrorCode.TOKEN_INVALID) from None
 
     user = db.get(User, user_id)
     if not user:

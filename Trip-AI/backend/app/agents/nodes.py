@@ -2,7 +2,7 @@
 import asyncio
 import json
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import openai
 from loguru import logger
@@ -45,7 +45,7 @@ _RETRYABLE_LLM_ERRORS = (
 )
 
 
-def _is_retryable_llm_error(e: Exception) -> bool:
+def _is_retryable_llm_error(e: BaseException) -> bool:
     """判断 LLM 异常是否值得重试（限流/超时/5xx）；业务性错误（如 4xx）不重试"""
     if isinstance(e, _RETRYABLE_LLM_ERRORS):
         return True
@@ -268,6 +268,6 @@ def _parse_plan_json(text: str) -> Dict[str, Any]:
         start = text.find("{")
         end = text.rfind("}")
         if start == -1 or end <= start:
-            raise ValueError("无法解析 LLM 返回的 JSON 内容")
+            raise ValueError("无法解析 LLM 返回的 JSON 内容") from None
         data = json.loads(text[start : end + 1])
     return TripPlan.model_validate(data).model_dump()

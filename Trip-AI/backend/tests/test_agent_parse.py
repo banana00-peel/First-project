@@ -27,7 +27,11 @@ def test_parse_markdown_fenced():
 
 
 def test_parse_json_with_prefix_suffix():
-    text = "好的，以下是计划：\n" + json.dumps(_minimal_plan(), ensure_ascii=False) + "\n希望对你有帮助"
+    text = (
+        "好的，以下是计划：\n"
+        + json.dumps(_minimal_plan(), ensure_ascii=False)
+        + "\n希望对你有帮助"
+    )
     data = _parse_plan_json(text)
     assert data["city"] == "北京"
 

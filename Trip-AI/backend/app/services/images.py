@@ -29,7 +29,7 @@ class ImageService:
             resp.raise_for_status()
             results = resp.json().get("results", [])
             return [r.get("urls", {}).get("regular", "") for r in results if r.get("urls")]
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Unsplash 请求失败: {}", e)
             return []
 

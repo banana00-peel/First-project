@@ -30,8 +30,9 @@ def init_db():
 
     迁移脚本位于 backend/alembic，数据库 URL 由 alembic/env.py 从 app.config 读取。
     """
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     # noqa: F401 —— 导入模型以注册到 Base.metadata（Alembic autogenerate 依赖）
     from app.models import generation_task, share, trip, user  # noqa: F401

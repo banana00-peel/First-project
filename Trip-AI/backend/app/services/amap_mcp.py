@@ -93,7 +93,7 @@ async def close_amap_mcp() -> None:
     if _session_ctx is not None:
         try:
             await _session_ctx.__aexit__(None, None, None)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("关闭高德 MCP 会话失败: {}", e)
     _client = None
     _session_ctx = None
@@ -163,7 +163,7 @@ async def _call_tool(
     except asyncio.TimeoutError:
         logger.warning("工具调用超时（>{:.0f}s）: {}", timeout, tool.name)
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("工具调用失败 {}: {} ({})", tool.name, args, e)
         return None
     return parse_tool_result(raw)
@@ -245,7 +245,9 @@ def _dedupe(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 # ---------- 取数 ----------
 
-async def gather_amap_data(city: str, tools: Dict[str, BaseTool]) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+async def gather_amap_data(
+    city: str, tools: Dict[str, BaseTool]
+) -> Tuple[List[Dict], List[Dict], List[Dict]]:
     """确定性调用高德 MCP 工具取数：景点搜索 + 天气 + 酒店搜索。
 
     text_search 不返回坐标，这里对每个 POI 再调 search_detail 补齐

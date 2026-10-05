@@ -43,19 +43,39 @@ def create_share(
     db.commit()
     db.refresh(link)
 
-    return ShareLinkOut(token=link.token, url=_build_url(request, token), expires_at=link.expires_at)
+    return ShareLinkOut(
+        token=link.token, url=_build_url(request, token), expires_at=link.expires_at
+    )
 
 
-@router.get("/trips/{trip_id}/links", response_model=list[ShareLinkOut], summary="行程的分享链接列表")
-def list_links(trip_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+@router.get(
+    "/trips/{trip_id}/links",
+    response_model=list[ShareLinkOut],
+    summary="行程的分享链接列表",
+)
+def list_links(
+    trip_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if not trip:
         raise BizError(ErrorCode.TRIP_NOT_FOUND)
     links = db.query(ShareLink).filter(ShareLink.trip_id == trip_id).all()
-    return [ShareLinkOut(token=l.token, url=_build_url(request, l.token), expires_at=l.expires_at) for l in links]
+    return [
+        ShareLinkOut(
+            token=link.token, url=_build_url(request, link.token), expires_at=link.expires_at
+        )
+        for link in links
+    ]
 
 
-@router.get("/{token}", response_model=ShareViewResponse, summary="通过 token 查看分享的行程（无需登录）")
+@router.get(
+    "/{token}",
+    response_model=ShareViewResponse,
+    summary="通过 token 查看分享的行程（无需登录）",
+)
 def view_share(token: str, db: Session = Depends(get_db)):
     link = db.query(ShareLink).filter(ShareLink.token == token).first()
     if not link:

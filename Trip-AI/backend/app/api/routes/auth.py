@@ -28,7 +28,9 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return TokenResponse(access_token=create_access_token(user.id), user=UserOut.model_validate(user))
+    return TokenResponse(
+        access_token=create_access_token(user.id), user=UserOut.model_validate(user)
+    )
 
 
 @router.post("/login", response_model=TokenResponse, summary="登录")
@@ -37,7 +39,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(payload.password, user.password_hash):
         raise BizError(ErrorCode.INVALID_CREDENTIALS)
 
-    return TokenResponse(access_token=create_access_token(user.id), user=UserOut.model_validate(user))
+    return TokenResponse(
+        access_token=create_access_token(user.id), user=UserOut.model_validate(user)
+    )
 
 
 @router.get("/me", response_model=UserOut, summary="当前用户信息")

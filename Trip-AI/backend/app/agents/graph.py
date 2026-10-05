@@ -1,6 +1,6 @@
 """LangGraph 图编排：取数节点 → 结构化规划节点 → 坐标回填/路线节点"""
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
@@ -21,7 +21,7 @@ def get_llm() -> ChatOpenAI:
         s = get_settings()
         _llm = ChatOpenAI(
             model=s.llm_model,
-            api_key=s.llm_api_key,
+            api_key=s.llm_api_key,  # type: ignore[arg-type]
             base_url=s.llm_base_url,
             temperature=s.llm_temperature,
             timeout=120,

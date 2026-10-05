@@ -31,7 +31,10 @@ def generate_trip_task(self, task_id: str) -> None:
         db.commit()
 
         result = run_async(
-            run_planner(task.request, trace_metadata={"task_id": task.id, "trace_name": "trip_generation"})
+            run_planner(
+                task.request,
+                trace_metadata={"task_id": task.id, "trace_name": "trip_generation"},
+            )
         )
         plan = result.get("plan")
         if not plan:
@@ -47,7 +50,7 @@ def generate_trip_task(self, task_id: str) -> None:
         # 连接类瞬时错误且未达重试上限：交回 broker 重试；其余标记失败
         if self.request.retries < self.max_retries and _is_connection_error(e):
             logger.warning("生成任务遇到连接错误，将重试: {} ({})", task_id, e)
-            raise self.retry(exc=e)
+            raise self.retry(exc=e) from e
         task = db.get(GenerationTask, task_id)
         if task is not None:
             task.status = TaskStatus.FAILED.value

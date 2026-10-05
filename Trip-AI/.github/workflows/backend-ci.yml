@@ -23,6 +23,14 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Lint with ruff
+        working-directory: backend
+        run: ruff check app tests
+
+      - name: Type check with mypy
+        working-directory: backend
+        run: mypy app
+
       - name: Run tests with coverage
         working-directory: backend
         # 只跑测试并输出覆盖率报告，不设 --cov-fail-under 门槛

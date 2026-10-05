@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.db import Base
 
 
-class ShareLink(Base):
+class ShareLink(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "share_links"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

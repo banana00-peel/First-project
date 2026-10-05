@@ -48,8 +48,20 @@ async def _fake_tools():
         "maps_text_search": FakeTool(
             {
                 "pois": [
-                    {"id": "B001", "name": "故宫", "address": "北京市东城区", "type": "景点", "photos": []},
-                    {"id": "B002", "name": "天安门", "address": "北京市东城区", "type": "景点", "photos": []},
+                    {
+                        "id": "B001",
+                        "name": "故宫",
+                        "address": "北京市东城区",
+                        "type": "景点",
+                        "photos": [],
+                    },
+                    {
+                        "id": "B002",
+                        "name": "天安门",
+                        "address": "北京市东城区",
+                        "type": "景点",
+                        "photos": [],
+                    },
                 ]
             }
         ),

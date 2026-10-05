@@ -22,12 +22,14 @@ def _gen_task_id() -> str:
     return uuid.uuid4().hex
 
 
-class GenerationTask(Base):
+class GenerationTask(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "generation_tasks"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_gen_task_id)
     request: Mapped[dict] = mapped_column(JSON, nullable=False)
-    status: Mapped[str] = mapped_column(String(16), default=TaskStatus.PENDING.value, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), default=TaskStatus.PENDING.value, nullable=False
+    )
     plan: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 

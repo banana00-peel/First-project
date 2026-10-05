@@ -27,7 +27,12 @@ def _serialize_created_at(trip: Trip) -> str:
     return trip.created_at.isoformat() if trip.created_at else ""
 
 
-@router.post("/generate", response_model=TaskAcceptedResponse, status_code=202, summary="提交生成任务（异步）")
+@router.post(
+    "/generate",
+    response_model=TaskAcceptedResponse,
+    status_code=202,
+    summary="提交生成任务（异步）",
+)
 def generate_trip(request: TripRequest, db: Session = Depends(get_db)):
     """创建生成任务并入队，立即返回 task_id 供前端轮询，不再同步等待。
 
@@ -50,11 +55,20 @@ def get_generate_task(task_id: str, db: Session = Depends(get_db)):
     task = db.get(GenerationTask, task_id)
     if task is None:
         raise BizError(ErrorCode.GENERATION_TASK_NOT_FOUND)
-    return TaskStatusResponse(task_id=task.id, status=task.status, plan=task.plan, error=task.error)
+    return TaskStatusResponse(
+        task_id=task.id,
+        status=task.status,
+        plan=task.plan,  # type: ignore[arg-type]
+        error=task.error,
+    )
 
 
 @router.post("", response_model=TripSummary, summary="保存行程")
-def save_trip(request: TripSaveRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def save_trip(
+    request: TripSaveRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     trip = Trip(
         user_id=user.id,
         city=request.city,
@@ -89,7 +103,11 @@ def get_trip(trip_id: int, db: Session = Depends(get_db), user: User = Depends(g
 
 
 @router.delete("/{trip_id}", response_model=MessageResponse, summary="删除行程")
-def delete_trip(trip_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def delete_trip(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if not trip:
         raise BizError(ErrorCode.TRIP_NOT_FOUND)

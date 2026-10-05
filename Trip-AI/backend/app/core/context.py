@@ -5,4 +5,6 @@ request_id 由 RequestContextMiddleware 写入，供日志、trace、错误响�
 """
 import contextvars
 
-request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
+request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "request_id", default=None
+)

@@ -10,7 +10,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # JWT 密钥校验：占位符集合 + 最小长度（HS256 建议 ≥ 32 字符）
-_JWT_SECRET_PLACEHOLDERS = {"change-me", "please-change-me", "changeme", "secret", "your-secret", ""}
+_JWT_SECRET_PLACEHOLDERS = {
+    "change-me",
+    "please-change-me",
+    "changeme",
+    "secret",
+    "your-secret",
+    "",
+}
 _JWT_SECRET_MIN_LENGTH = 32
 
 
