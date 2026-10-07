@@ -2,6 +2,8 @@
 
 基于 **LangChain / LangGraph** 多智能体编排的 AI 旅行规划平台，支持用户账户、历史行程管理与行程链接分享。
 
+> 架构设计与技术选型决策详见 [docs/第二版技术方案.md](docs/第二版技术方案.md)。
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -177,6 +179,7 @@ python run.py
 ## 测试与 CI
 
 - 测试位于 `backend/tests/`，覆盖：错误码信封、认证路由、行程归属隔离（越权返回 404）、分享链接 404/410、`_parse_plan_json` 解析、以及一条**真实 LangGraph 链集成测试**（mock LLM/MCP/图片，不触网，验证取数 → 规划 → 坐标回填 → 路线生成全流程）。
+- **离线评测集** `backend/tests/test_eval_set.py`：参数化多个城市场景（北京/上海/杭州/成都 × 公交/自驾/步行），回归断言「JSON 合法、天数正确、景点不编造、坐标已回填、路线已生成」。改 prompt（`app/agents/prompts.py` 的 `PROMPT_VERSION`）或编排逻辑后，跑一遍即可判断有没有改坏。
 - 本地运行（`backend/` 下）：
 
   ```bash
@@ -190,3 +193,4 @@ python run.py
 
 - `.env` 文件修改为自己的真实密钥。
 - 生产环境务必修改 `JWT_SECRET`，并建议轮换 DeepSeek / 高德 API key。
+- 数据库密码通过 `POSTGRES_PASSWORD` 环境变量注入（不在编排文件里写死），生产部署前在 `.env` 设一个强密码。

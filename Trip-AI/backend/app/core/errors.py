@@ -13,6 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
@@ -30,6 +31,7 @@ class ErrorCode(IntEnum):
     FORBIDDEN = 10004             # 无权限
     NOT_FOUND = 10005             # 资源不存在
     INTERNAL_ERROR = 10006        # 服务器内部错误
+    RATE_LIMITED = 10007          # 请求过于频繁
 
     # 用户/认证 2xxxx
     EMAIL_ALREADY_REGISTERED = 20001   # 该邮箱已被注册
@@ -57,6 +59,7 @@ _META: Dict[ErrorCode, Tuple[int, str]] = {
     ErrorCode.FORBIDDEN: (403, "无权限"),
     ErrorCode.NOT_FOUND: (404, "资源不存在"),
     ErrorCode.INTERNAL_ERROR: (500, "服务器内部错误"),
+    ErrorCode.RATE_LIMITED: (429, "请求过于频繁，请稍后再试"),
     ErrorCode.EMAIL_ALREADY_REGISTERED: (409, "该邮箱已被注册"),
     ErrorCode.USERNAME_TAKEN: (409, "该用户名已被占用"),
     ErrorCode.INVALID_CREDENTIALS: (401, "邮箱或密码错误"),
@@ -120,6 +123,14 @@ def install_exception_handlers(app: FastAPI) -> None:
         else:
             code, message = ErrorCode.NOT_FOUND, "请求处理失败"
         return _error_response(int(code), exc.status_code, message)
+
+    @app.exception_handler(RateLimitExceeded)
+    async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+        return _error_response(
+            int(ErrorCode.RATE_LIMITED),
+            _META[ErrorCode.RATE_LIMITED][0],
+            _META[ErrorCode.RATE_LIMITED][1],
+        )
 
     @app.exception_handler(Exception)
     async def _unhandled_handler(request: Request, exc: Exception):

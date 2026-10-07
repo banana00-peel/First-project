@@ -1,5 +1,9 @@
 """Prompt 模板"""
 
+# Prompt 版本号：改动 PLANNER_SYSTEM / build_planner_prompt 时必须 bump，并跑
+# `pytest tests/test_eval_set.py` 做离线回归，确认输出结构没有被改坏。
+PROMPT_VERSION = "1.0.0"
+
 PLANNER_SYSTEM = """你是一位资深的旅行规划专家，擅长设计合理、可执行的行程。
 
 你将收到：目的地城市、起止日期、旅行天数、交通方式、住宿偏好、旅行偏好、额外要求，

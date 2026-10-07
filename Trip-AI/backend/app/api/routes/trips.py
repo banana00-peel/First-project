@@ -1,12 +1,14 @@
 """行程路由"""
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.errors import BizError, ErrorCode
+from app.core.ratelimit import limiter
 from app.models.generation_task import GenerationTask
 from app.models.trip import Trip
 from app.models.user import User
@@ -33,15 +35,16 @@ def _serialize_created_at(trip: Trip) -> str:
     status_code=202,
     summary="提交生成任务（异步）",
 )
-def generate_trip(request: TripRequest, db: Session = Depends(get_db)):
+@limiter.limit(lambda: get_settings().rate_limit_generate)
+def generate_trip(request: Request, payload: TripRequest, db: Session = Depends(get_db)):
     """创建生成任务并入队，立即返回 task_id 供前端轮询，不再同步等待。
 
     用 send_task 按名字入队：web 进程无需导入 LangChain/MCP 栈，保持轻量；
-    任务实现只在 worker 侧加载。
+    任务实现只在 worker 侧加载。该接口是 LLM/MCP 长任务的入口，按 IP 限流防刷。
     """
     from app.core.celery_app import celery_app
 
-    task = GenerationTask(request=request.model_dump())
+    task = GenerationTask(request=payload.model_dump())
     db.add(task)
     db.commit()
     db.refresh(task)

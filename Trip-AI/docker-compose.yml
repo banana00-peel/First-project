@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: trip
-      POSTGRES_PASSWORD: trip_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trip_password}
       POSTGRES_DB: trip
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -29,7 +29,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://trip:trip_password@db:5432/trip
+      DATABASE_URL: postgresql+psycopg2://trip:${POSTGRES_PASSWORD:-trip_password}@db:5432/trip
       REDIS_URL: redis://redis:6379/0
       LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
       LLM_API_KEY: ${LLM_API_KEY}
@@ -57,7 +57,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://trip:trip_password@db:5432/trip
+      DATABASE_URL: postgresql+psycopg2://trip:${POSTGRES_PASSWORD:-trip_password}@db:5432/trip
       REDIS_URL: redis://redis:6379/0
       LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
       LLM_API_KEY: ${LLM_API_KEY}

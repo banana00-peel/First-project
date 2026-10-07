@@ -14,6 +14,7 @@ from app.core.db import engine, get_db, init_db
 from app.core.errors import install_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import RequestContextMiddleware
+from app.core.ratelimit import limiter
 
 settings = get_settings()
 
@@ -37,12 +38,17 @@ app = FastAPI(
 
 install_exception_handlers(app)
 
+# slowapi 限流器挂到 app.state，路由上的 @limiter.limit 装饰器据此生效
+app.state.limiter = limiter
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.get_cors_origins_list(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # 方法与请求头收成显式白名单（不放行 *），只开放前端实际用到的，减小攻击面。
+    # X-Request-ID 由 RequestContextMiddleware 透传，需放行。
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "Accept"],
 )
 
 # 请求上下文：生成/透传 X-Request-ID，供日志与错误响应关联（最外层）

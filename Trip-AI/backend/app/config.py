@@ -32,9 +32,13 @@ class Settings(BaseSettings):
     # 服务器配置
     host: str = "0.0.0.0"
     port: int = 8000
+    reload: bool = True  # 仅本地开发热重载；容器/生产用 uvicorn 直启（无 reloader）
 
     # CORS
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+
+    # 限流（slowapi）：生成接口每 IP 每分钟上限
+    rate_limit_generate: str = "5/minute"
 
     # 数据库（默认 SQLite 便于本地开发；生产用 PostgreSQL）
     database_url: str = "sqlite:///./trip.db"
