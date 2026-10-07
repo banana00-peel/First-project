@@ -24,3 +24,9 @@ Thumbs.db
 
 # 日志
 *.log
+
+.idea/
+.claude/
+.coverage
+coverage.xml
+htmlcov/
