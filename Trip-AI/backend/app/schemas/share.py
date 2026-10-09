@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ShareCreateRequest(BaseModel):
@@ -14,8 +14,7 @@ class ShareLinkOut(BaseModel):
     url: str
     expires_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ShareViewResponse(BaseModel):

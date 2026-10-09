@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ---------- 请求 ----------
@@ -126,8 +126,7 @@ class TripSummary(BaseModel):
     status: str
     created_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("created_at", mode="before")
     @classmethod

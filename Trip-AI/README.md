@@ -1,6 +1,6 @@
 # Trip-AI 旅行规划平台
 
-基于 **LangChain / LangGraph** 多智能体编排的 AI 旅行规划平台，支持用户账户、历史行程管理与行程链接分享。
+基于 **LangChain / LangGraph** 智能体工作流编排的 AI 旅行规划平台，支持用户账户、历史行程管理与行程链接分享。
 
 > 架构设计与技术选型决策详见 [docs/第二版技术方案.md](docs/第二版技术方案.md)。
 
@@ -83,6 +83,7 @@ npm run dev
 | `JWT_SECRET` | JWT 签名密钥（务必修改） |
 | `DATABASE_URL` | 默认 `sqlite:///./trip.db` |
 | `REDIS_URL` | Celery broker，默认 `redis://localhost:6379/0` |
+| `RATE_LIMIT_GENERATE` | 生成接口限流阈值（slowapi），默认 `5/minute` |
 | `LOG_LEVEL` | 日志级别，默认 `INFO` |
 | `LANGFUSE_ENABLED` | 链路追踪开关，默认 `false`（关闭时无外部依赖） |
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | Langfuse 云版公钥/私钥（启用时必填） |
@@ -141,6 +142,8 @@ python run.py
 
 任务状态机：`pending → processing → completed / failed`，结果与错误持久化于 `generation_tasks` 表。worker 采用 `task_acks_late`，进程崩溃后未完成任务会自动重投。
 
+生成接口按 IP 限流（slowapi，默认 5 次/分钟，可用 `RATE_LIMIT_GENERATE` 调整），超阈值返回 429 + `10007` 错误信封。
+
 ## 核心流程
 
 1. 用户在首页填写目的地、日期、偏好。
@@ -158,7 +161,7 @@ python run.py
 
 | 段 | 范围 | 示例 |
 | --- | --- | --- |
-| 通用 | 1xxxx | `10001` 参数校验失败、`10002` 未登录、`10005` 资源不存在 |
+| 通用 | 1xxxx | `10001` 参数校验失败、`10002` 未登录、`10005` 资源不存在、`10007` 请求过于频繁 |
 | 用户/认证 | 2xxxx | `20001` 邮箱已注册、`20003` 邮箱或密码错误 |
 | 行程 | 3xxxx | `30001` 行程不存在、`30002` 生成任务不存在 |
 | 分享 | 4xxxx | `40001` 分享链接不存在、`40002` 已过期 |
