@@ -32,7 +32,7 @@ Trip-AI/
 │   │   ├── schemas/         # Pydantic schema
 │   │   ├── tasks/           # Celery 任务（生成任务 / worker 事件循环）
 │   │   └── services/        # 高德 MCP / 图片服务
-│   ├── .env                 # 本地环境变量（含密钥，不提交）
+│   ├── .env                 # 本地环境变量（保存密钥）
 │   └── requirements.txt
 ├── frontend/                # Vue3 前端
 │   ├── src/views/           # Login / Register / Home / Result / MyTrips / ShareView
