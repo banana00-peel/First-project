@@ -8,7 +8,7 @@
 
 | 层 | 技术 |
 | --- | --- |
-| 后端 | FastAPI + SQLAlchemy 2.0 + PostgreSQL(SQLite) + PyJWT + bcrypt |
+| 后端 | FastAPI + SQLAlchemy 2.0 + PostgreSQL + PyJWT + bcrypt |
 | 异步任务 | Celery + Redis（行程生成异步化：提交即返回 task_id，前端轮询） |
 | 可观测性 | 统一 request_id + loguru 结构化日志 + Langfuse 链路追踪（可选） |
 | 错误处理 | 统一业务错误码体系（`{code, message, detail, request_id}` 信封） |
@@ -55,6 +55,9 @@ cp .env.example .env             # 填写真实的 LLM / 高德 / JWT 密钥
 python run.py
 ```
 
+> 前置要求：本地需已启动 PostgreSQL，并将 `backend/.env` 的 `DATABASE_URL` 指向它（默认
+> `postgresql+psycopg2://postgres:1234@localhost:5432/tripdb`）；后端启动时会自动执行 Alembic 迁移建表。
+
 后端默认运行于 http://localhost:8000，交互式文档见 `/docs`。
 
 > 依赖说明：`requirements.txt` 是 `pip-compile` 生成的锁定文件（精确版本，构建可复现）。升级/新增依赖时，编辑 `requirements.in` 后运行 `pip-compile requirements.in` 重新生成。
@@ -81,7 +84,7 @@ npm run dev
 | `LLM_BASE_URL` | 默认 `https://api.deepseek.com` |
 | `AMAP_API_KEY` | 高德地图 Web服务 API key（本地 MCP 服务器以 `AMAP_MAPS_API_KEY` 注入使用） |
 | `JWT_SECRET` | JWT 签名密钥（务必修改） |
-| `DATABASE_URL` | 默认 `sqlite:///./trip.db` |
+| `DATABASE_URL` | 默认 `postgresql+psycopg2://postgres:1234@localhost:5432/tripdb` |
 | `REDIS_URL` | Celery broker，默认 `redis://localhost:6379/0` |
 | `RATE_LIMIT_GENERATE` | 生成接口限流阈值（slowapi），默认 `5/minute` |
 | `LOG_LEVEL` | 日志级别，默认 `INFO` |

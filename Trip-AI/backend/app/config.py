@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     # 限流（slowapi）：生成接口每 IP 每分钟上限
     rate_limit_generate: str = "5/minute"
 
-    # 数据库（默认 SQLite 便于本地开发；生产用 PostgreSQL）
-    database_url: str = "sqlite:///./trip.db"
+    # 数据库（本地 PostgreSQL；真实密码在 backend/.env 的 DATABASE_URL，此处仅为占位默认值）
+    database_url: str = "postgresql+psycopg2://postgres:your-password@localhost:5432/tripdb"
 
     # Redis（Celery 任务队列 broker）
     redis_url: str = "redis://localhost:6379/0"

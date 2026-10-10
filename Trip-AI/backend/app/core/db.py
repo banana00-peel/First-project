@@ -6,13 +6,8 @@ from app.config import BASE_DIR, get_settings
 
 settings = get_settings()
 
-_connect_args = {}
-if settings.database_url.startswith("sqlite"):
-    # check_same_thread：FastAPI 多线程访问 SQLite；timeout：web + worker 多进程并发写时等待锁
-    _connect_args = {"check_same_thread": False, "timeout": 30}
-else:
-    # Postgres 连接超时：DB 不可达时快速失败，避免就绪探针/请求长时间阻塞
-    _connect_args = {"connect_timeout": 5}
+# Postgres 连接超时：DB 不可达时快速失败，避免就绪探针/请求长时间阻塞
+_connect_args = {"connect_timeout": 5}
 
 engine = create_engine(settings.database_url, pool_pre_ping=True, connect_args=_connect_args)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

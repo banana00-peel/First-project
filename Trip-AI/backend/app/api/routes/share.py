@@ -81,7 +81,7 @@ def view_share(token: str, db: Session = Depends(get_db)):
     if not link:
         raise BizError(ErrorCode.SHARE_NOT_FOUND)
 
-    # SQLite 不保存时区信息，读回的 datetime 为 naive，需补齐 UTC 时区后再比较
+    # 部分驱动/测试库读回的 datetime 可能为 naive，补齐 UTC 时区后再比较
     expires_at = link.expires_at
     if expires_at and expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
