@@ -60,6 +60,8 @@ python run.py
 
 后端默认运行于 http://localhost:8000，交互式文档见 `/docs`。
 
+> 上述步骤可启动后端并完成账户 / 行程 CRUD；**生成行程**功能还需要 Redis 与 Celery worker（后端只负责入队、worker 消费），三进程的启动方式见下文「异步任务」一节。
+
 > 依赖说明：`requirements.txt` 是 `pip-compile` 生成的锁定文件（精确版本，构建可复现）。升级/新增依赖时，编辑 `requirements.in` 后运行 `pip-compile requirements.in` 重新生成。
 
 ### 2. 前端
@@ -111,7 +113,7 @@ docker compose up -d --build
 - 数据库：PostgreSQL（数据持久化于 `pgdata` 卷）
 - 队列：Redis（Celery broker）
 
-> 行程生成已异步化：后端入队后由 worker 执行，前端轮询任务状态（见下节）。
+> 行程生成已异步化，由 worker 服务后台执行（见「异步任务」一节）。
 
 ## 数据库迁移
 
@@ -171,7 +173,7 @@ python run.py
 | 生成 | 5xxxx | `50001` 行程生成失败 |
 
 - 业务代码统一抛 `BizError(ErrorCode.XXX)`，由全局处理器转成统一结构；校验错误（422）与未捕获异常（500）也走同一信封。
-- `request_id` 由请求中间件自动注入，与日志、链路追踪共用，可把一次请求在日志里串起来。
+- `request_id` 由中间件自动注入（机制见「可观测性」一节），可在日志里串起整次请求。
 - 前端只需读 `data.message ?? data.detail` 即可拿到可展示文案。
 
 ## 可观测性（日志 / 链路追踪）
