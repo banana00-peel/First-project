@@ -55,8 +55,8 @@ cp .env.example .env             # 填写真实的 LLM / 高德 / JWT 密钥
 python run.py
 ```
 
-> 前置要求：本地需已启动 PostgreSQL，并将 `backend/.env` 的 `DATABASE_URL` 指向它（默认
-> `postgresql+psycopg2://postgres:1234@localhost:5432/tripdb`）；后端启动时会自动执行 Alembic 迁移建表。
+> 前置要求：本地需已启动 PostgreSQL，并将 `backend/.env` 的 `DATABASE_URL` 指向它（模板见
+> `backend/.env.example`，形如 `postgresql+psycopg2://postgres:your-password@localhost:5432/tripdb`）；后端启动时会自动执行 Alembic 迁移建表。
 
 后端默认运行于 http://localhost:8000，交互式文档见 `/docs`。
 
@@ -84,7 +84,7 @@ npm run dev
 | `LLM_BASE_URL` | 默认 `https://api.deepseek.com` |
 | `AMAP_API_KEY` | 高德地图 Web服务 API key（本地 MCP 服务器以 `AMAP_MAPS_API_KEY` 注入使用） |
 | `JWT_SECRET` | JWT 签名密钥（务必修改） |
-| `DATABASE_URL` | 默认 `postgresql+psycopg2://postgres:1234@localhost:5432/tripdb` |
+| `DATABASE_URL` | 本地 PostgreSQL，形如 `postgresql+psycopg2://postgres:your-password@localhost:5432/tripdb` |
 | `REDIS_URL` | Celery broker，默认 `redis://localhost:6379/0` |
 | `RATE_LIMIT_GENERATE` | 生成接口限流阈值（slowapi），默认 `5/minute` |
 | `LOG_LEVEL` | 日志级别，默认 `INFO` |
