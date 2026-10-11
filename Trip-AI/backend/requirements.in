@@ -21,8 +21,9 @@ psycopg2-binary>=2.9.9
 alembic>=1.13.0
 
 # 异步任务队列（Celery + Redis）
+# 注意：如果本机环境使用 Redis 3.2（无 RESP3/HELLO），故 redis-py 锁 <6.0（RESP2）
 celery>=5.3.0
-redis>=5.0.0
+redis>=5.0.0,<6.0.0
 
 # 鉴权
 PyJWT>=2.8.0

@@ -87,7 +87,7 @@ npm run dev
 | `AMAP_API_KEY` | 高德地图 Web服务 API key（本地 MCP 服务器以 `AMAP_MAPS_API_KEY` 注入使用） |
 | `JWT_SECRET` | JWT 签名密钥（务必修改） |
 | `DATABASE_URL` | 本地 PostgreSQL，形如 `postgresql+psycopg2://postgres:your-password@localhost:5432/tripdb` |
-| `REDIS_URL` | Celery broker，默认 `redis://localhost:6379/0` |
+| `REDIS_URL` | Celery broker，默认 `redis://localhost:6379/0`（Redis 设了密码时写 `redis://:你的密码@localhost:6379/0`） |
 | `RATE_LIMIT_GENERATE` | 生成接口限流阈值（slowapi），默认 `5/minute` |
 | `LOG_LEVEL` | 日志级别，默认 `INFO` |
 | `LANGFUSE_ENABLED` | 链路追踪开关，默认 `false`（关闭时无外部依赖） |
@@ -132,7 +132,9 @@ Schema 变更由 Alembic 管理，迁移脚本位于 `backend/alembic/`，数据
 
 行程生成是 30–90s 的 LLM + 高德 MCP 长任务，已从请求/响应周期移出：`POST /api/trips/generate` 立即返回 `task_id`（202），由 Celery worker 后台执行，前端轮询 `GET /api/trips/generate/{task_id}` 获取结果。
 
-本地开发需要三个进程（后端目录 `backend/` 下执行）：
+本地开发需要三个进程：Redis（broker）、Celery worker、FastAPI 后端。
+
+**方式 A：Docker / Linux / macOS**
 
 ```bash
 # 1. Redis（broker）
@@ -144,6 +146,27 @@ celery -A app.core.celery_app worker --loglevel=info
 # 3. FastAPI 后端
 python run.py
 ```
+
+**方式 B：Windows + 原生 Redis**
+
+```bash
+# 1. Redis（broker）：进入 Redis 安装目录启动（路径按你的实际位置改）
+cd /d/develop/Redis-x64-3.2.100
+./redis-server.exe redis.windows.conf
+
+# 2. Celery worker：Windows 没有 fork()，必须加 --pool=solo
+cd /d/hub/Trip-AI/backend
+./.venv/Scripts/celery.exe -A app.core.celery_app worker --loglevel=info --pool=solo
+
+# 3. FastAPI 后端
+./.venv/Scripts/python.exe run.py
+```
+
+> 原生 Redis 注意两点：
+> - 若 `redis.windows.conf` 里设了 `requirepass`，需在 `backend/.env` 把 `REDIS_URL` 写成带密码的形式
+>   `redis://:你的密码@localhost:6379/0`，否则 worker 会连不上。
+> - Redis 3.2（微软版）不支持 Redis 6.0 才有的 `HELLO` 命令，故本项目已把 redis-py 锁在 `<6.0`（走 RESP2）。
+>   换用 Redis 6+ 后可放开该约束并重新 `pip-compile`。
 
 任务状态机：`pending → processing → completed / failed`，结果与错误持久化于 `generation_tasks` 表。worker 采用 `task_acks_late`，进程崩溃后未完成任务会自动重投。
 

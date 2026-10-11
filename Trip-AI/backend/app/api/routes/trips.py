@@ -25,10 +25,6 @@ from app.schemas.trip import (
 router = APIRouter(prefix="/trips", tags=["行程"])
 
 
-def _serialize_created_at(trip: Trip) -> str:
-    return trip.created_at.isoformat() if trip.created_at else ""
-
-
 @router.post(
     "/generate",
     response_model=TaskAcceptedResponse,

@@ -204,6 +204,7 @@ pyjwt[crypto]==2.15.1
     # via
     #   -r requirements.in
     #   mcp
+    #   redis
 python-dateutil==2.9.0.post0
     # via celery
 python-dotenv==1.2.4
@@ -221,7 +222,7 @@ pyyaml==6.0.3
     # via
     #   langchain-core
     #   uvicorn
-redis==8.1.0
+redis==5.3.1
     # via -r requirements.in
 referencing==0.37.0
     # via
