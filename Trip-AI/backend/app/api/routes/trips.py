@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.core.context import request_id_var
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.errors import BizError, ErrorCode
@@ -40,7 +41,7 @@ def generate_trip(request: Request, payload: TripRequest, db: Session = Depends(
     """
     from app.core.celery_app import celery_app
 
-    task = GenerationTask(request=payload.model_dump())
+    task = GenerationTask(request=payload.model_dump(), request_id=request_id_var.get())
     db.add(task)
     db.commit()
     db.refresh(task)

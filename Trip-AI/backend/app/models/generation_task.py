@@ -26,6 +26,7 @@ class GenerationTask(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "generation_tasks"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_gen_task_id)
+    request_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
     request: Mapped[dict] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), default=TaskStatus.PENDING.value, nullable=False
